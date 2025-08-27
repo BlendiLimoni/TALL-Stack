@@ -15,9 +15,10 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->withPersonalTeam()->create();
 
-        User::factory()->withPersonalTeam()->create([
-            'name' => 'Test User',
+        User::factory()->withPersonalTeam()->firstOrCreate([
             'email' => 'test@example.com',
+        ], [
+            'name' => 'Test User',
         ]);
 
         $this->call(DemoSeeder::class);

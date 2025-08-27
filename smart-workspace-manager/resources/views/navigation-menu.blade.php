@@ -18,6 +18,9 @@
                     <x-nav-link href="{{ route('projects.index') }}" :active="request()->routeIs('projects.*')">
                         {{ __('Projects') }}
                     </x-nav-link>
+                    <div class="ms-3">
+                        @livewire('search')
+                    </div>
                 </div>
             </div>
 
@@ -73,6 +76,8 @@
                         </x-dropdown>
                     </div>
                 @endif
+
+                @livewire('notifications.show-notifications')
 
                 <!-- Settings Dropdown -->
                 <div class="ms-3 relative">

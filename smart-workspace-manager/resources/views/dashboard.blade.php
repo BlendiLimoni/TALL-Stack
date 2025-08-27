@@ -7,24 +7,16 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="p-4 rounded-lg bg-white dark:bg-gray-800 shadow">
-                            <div class="text-sm text-gray-500">Welcome</div>
-                            <div class="mt-1 text-lg">{{ Auth::user()->name }}</div>
-                        </div>
-                        <div class="p-4 rounded-lg bg-white dark:bg-gray-800 shadow">
-                            <div class="text-sm text-gray-500">Current Team</div>
-                            <div class="mt-1 text-lg">{{ Auth::user()->currentTeam->name ?? 'N/A' }}</div>
-                        </div>
-                        <a href="{{ route('projects.index') }}" class="p-4 rounded-lg bg-indigo-600 text-white shadow hover:bg-indigo-700">
-                            <div class="text-sm opacity-90">Manage</div>
-                            <div class="mt-1 text-lg font-semibold">Projects →</div>
-                        </a>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        @livewire('dashboard.overdue-tasks')
+                        @livewire('dashboard.recent-activity')
                     </div>
-                    <div class="p-6 rounded-lg bg-white dark:bg-gray-800 shadow">
-                        <div class="text-gray-600 dark:text-gray-300">This is your Smart Workspace Manager. Use Teams to invite members and manage projects with a Kanban board.</div>
-                    </div>
+                </div>
+                <div class="lg:col-span-1">
+                    @livewire('dashboard.project-stats')
+                </div>
             </div>
         </div>
     </div>

@@ -9,6 +9,19 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
+use Illuminate\Support\Facades\Schema;
+
+Route::get('/check-schema', function () {
+    return response()->json(Schema::getColumnListing('tasks'));
+});
+
+use Illuminate\Support\Facades\DB;
+
+Route::get('/fix-migrations', function () {
+    DB::table('migrations')->where('migration', '2025_08_27_210710_add_due_date_to_tasks_table')->delete();
+    return 'Migration record deleted.';
+});
+
 Route::get('/', function () {
     return view('welcome');
 });
@@ -23,7 +36,7 @@ Route::middleware([
     })->name('dashboard');
 
     Route::get('/projects', ProjectsIndex::class)->name('projects.index');
-    Route::get('/projects/{project}', ProjectKanban::class)->name('projects.show');
+    Route::get('/projects/{project}', ProjectKanban::class)->where('project', '[0-9]+')->name('projects.show');
 });
 
 // Quick demo login to showcase the app (disabled in production)

@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Jetstream\Http\Livewire\TeamMemberManager;
 use Livewire\Livewire;
+use Laravel\Jetstream\Jetstream;
 use Tests\TestCase;
 
 class UpdateTeamMemberRoleTest extends TestCase
@@ -14,6 +15,19 @@ class UpdateTeamMemberRoleTest extends TestCase
 
     public function test_team_member_roles_can_be_updated(): void
     {
+        Jetstream::role('admin', 'Administrator', [
+            'create',
+            'read',
+            'update',
+            'delete',
+        ])->description('Administrator users can perform any action.');
+
+        Jetstream::role('editor', 'Editor', [
+            'read',
+            'create',
+            'update',
+        ])->description('Editor users have the ability to read, create, and update.');
+
         $this->actingAs($user = User::factory()->withPersonalTeam()->create());
 
         $user->currentTeam->users()->attach(

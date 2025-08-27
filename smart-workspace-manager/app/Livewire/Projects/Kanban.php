@@ -61,7 +61,8 @@ class Kanban extends Component
             'action' => 'task.moved',
             'subject_type' => Task::class,
             'subject_id' => $task->id,
-            'meta' => ['status' => $status, 'order' => $order],
+                            'meta' => ['status' => $status, 'order' => $order]
+
         ]);
 
         $this->dispatch('toast', type: 'success', message: 'Task updated');

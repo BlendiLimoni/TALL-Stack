@@ -60,6 +60,7 @@
         @stack('modals')
 
         @livewireScripts
+        @livewire('command-palette')
         <script>
             document.addEventListener('livewire:init', () => {
                 Livewire.on('toast', ({ type, message }) => {
