@@ -5,6 +5,7 @@ namespace App\Livewire\Projects;
 use App\Models\ActivityLog;
 use App\Models\Project;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -50,7 +51,31 @@ class ProjectForm extends Component
     public function save(): void
     {
         $this->validate();
-        $team = Auth::user()->currentTeam;
+        // Ensure we always have a team to attach the project to
+        $user = Auth::user();
+        $team = $user->currentTeam;
+        if (!$team) {
+            // Fallback to any team the user belongs to (without relying on dynamic relations)
+            $team = \App\Models\Team::whereHas('users', function ($q) use ($user) {
+                $q->where('users.id', $user->id);
+            })->first();
+            if ($team) {
+                // Set as current to avoid future nulls
+                DB::table('users')->where('id', $user->id)->update(['current_team_id' => $team->id]);
+            }
+        }
+        if (!$team) {
+            // As a last resort, create a personal team so project creation works
+            $team = \Laravel\Jetstream\Jetstream::newTeamModel()->forceFill([
+                'user_id' => $user->id,
+                'name' => $user->name . "'s Team",
+                'personal_team' => true,
+            ]);
+            $team->save();
+            // Attach user to team and set current
+            $team->users()->syncWithoutDetaching([$user->id => ['role' => 'admin']]);
+            DB::table('users')->where('id', $user->id)->update(['current_team_id' => $team->id]);
+        }
         if ($this->project) {
             $this->project->update([
                 'name' => $this->name,

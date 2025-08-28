@@ -1,17 +1,24 @@
 <div>
-    <!-- Command Palette Modal -->
+    <!-- Command Palette Trigger (invisible, just for keyboard shortcut) -->
     <div x-data="{ 
-            isVisible: @entangle('isOpen')
+            showModal: false,
+            init() {
+                // Force close on initialization
+                this.showModal = false;
+                this.$wire.closePalette();
+            }
          }"
-         @keydown.window.cmd.k.prevent="$wire.openPalette()"
-         @keydown.window.ctrl.k.prevent="$wire.openPalette()"
-         @keydown.window.escape="$wire.closePalette()">
+         @keydown.window.cmd.k.prevent="showModal = true; $wire.openPalette()"
+         @keydown.window.ctrl.k.prevent="showModal = true; $wire.openPalette()"
+         @keydown.window.escape="showModal = false; $wire.closePalette()"
+         @palette-closed.window="showModal = false">
         
         <!-- Modal Backdrop -->
-        <div x-show="isVisible" 
-             x-transition.opacity.duration.200ms
-             class="fixed inset-0 z-40 bg-black bg-opacity-50 flex items-center justify-center"
-             @click.self="$wire.closePalette()">
+        <div x-show="showModal || @js($isOpen)" 
+             x-transition.opacity.duration.300ms
+             class="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center"
+             @click.self="showModal = false; $wire.closePalette()"
+             style="display: none;">
             
             <!-- Modal Content -->
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl mx-4"
@@ -20,7 +27,7 @@
                 <!-- Header -->
                 <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Search Projects</h3>
-                    <button @click="$wire.closePalette()" 
+                    <button @click="showModal = false; $wire.closePalette()" 
                             class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -45,7 +52,7 @@
                                 @foreach ($results as $result)
                                     <li>
                                         <a href="{{ route('projects.show', $result) }}" 
-                                           @click="$wire.closePalette()"
+                                           @click="showModal = false; $wire.closePalette()"
                                            class="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                             <div class="font-medium text-gray-900 dark:text-white">{{ $result->name }}</div>
                                             @if($result->description)

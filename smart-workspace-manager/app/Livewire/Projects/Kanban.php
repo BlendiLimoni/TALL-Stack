@@ -9,7 +9,6 @@ use App\Notifications\TaskAssigned;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Layout;
-use Livewire\Attributes\On;
 use Livewire\Component;
 
 #[Layout('layouts.app')]
@@ -19,6 +18,16 @@ class Kanban extends Component
     public Project $project;
     public string $filter = '';
     public string $priority = '';
+    public bool $showTaskModal = false;
+    public ?int $taskId = null;
+    public array $form = [
+        'title' => '',
+        'description' => '',
+        'due_date' => null,
+        'assigned_user_id' => null,
+        'priority' => 'medium',
+        'status' => 'todo',
+    ];
 
     public function mount(\App\Models\Project $project): void
     {
@@ -37,11 +46,14 @@ class Kanban extends Component
             ->groupBy('status');
     }
 
-    #[On('reorder-task')]
-    public function reorderTask(int $taskId, string $status, int $order): void
+    public function reorderTask(array $payload): void
     {
-    $task = Task::findOrFail($taskId);
-    $this->authorize('update', $task);
+        $taskId = $payload['taskId'];
+        $status = $payload['status'];
+        $order = $payload['order'];
+
+        $task = Task::findOrFail($taskId);
+        $this->authorize('update', $task);
 
         // Shift orders within the target status
         Task::where('project_id', $task->project_id)
@@ -50,10 +62,13 @@ class Kanban extends Component
             ->where('order', '>=', $order)
             ->increment('order');
 
-        $task->update([
-            'status' => $status,
-            'order' => $order,
-        ]);
+        // Avoid Scout indexing on simple reorder
+        Task::withoutSyncingToSearch(function () use ($task, $status, $order) {
+            $task->update([
+                'status' => $status,
+                'order' => $order,
+            ]);
+        });
 
         ActivityLog::create([
             'team_id' => $task->project->team_id,
@@ -69,14 +84,61 @@ class Kanban extends Component
         $this->dispatch('$refresh');
     }
 
-    #[On('save-task')]
-    public function saveTask(?int $taskId, array $data): void
+    public function getTaskData(int $taskId): array
     {
+        $task = Task::findOrFail($taskId);
+        $this->authorize('view', $task);
+        
+        return [
+            'title' => $task->title,
+            'description' => $task->description,
+            'due_date' => $task->due_date?->format('Y-m-d'),
+            'assigned_user_id' => $task->assigned_user_id,
+            'priority' => $task->priority,
+            'status' => $task->status,
+        ];
+    }
+
+    public function openTaskModal(?int $taskId = null): void
+    {
+        $this->taskId = $taskId;
+        if ($taskId) {
+            $data = $this->getTaskData($taskId);
+            $this->form = array_merge($this->form, $data);
+        } else {
+            $this->form = [
+                'title' => '',
+                'description' => '',
+                'due_date' => null,
+                'assigned_user_id' => null,
+                'priority' => 'medium',
+                'status' => 'todo',
+            ];
+        }
+        $this->showTaskModal = true;
+    }
+
+    public function closeTaskModal(): void
+    {
+        $this->showTaskModal = false;
+    }
+
+    public function saveTask(array $payload): void
+    {
+        $taskId = $payload['taskId'] ?? null;
+        $data = $payload['data'];
+        // Coerce optional blanks to null
+        foreach (['assigned_user_id','due_date'] as $opt) {
+            if (!isset($data[$opt]) || $data[$opt] === '' || $data[$opt] === false) {
+                $data[$opt] = null;
+            }
+        }
+
         $validated = validator($data, [
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'due_date' => ['nullable', 'date'],
-            'assigned_user_id' => ['nullable', 'exists:users,id'],
+            'assigned_user_id' => ['nullable', 'integer', 'exists:users,id'],
             'priority' => ['required', 'in:low,medium,high,urgent'],
             'status' => ['required', 'in:todo,in_progress,done'],
         ])->validate();
@@ -85,7 +147,9 @@ class Kanban extends Component
             $task = Task::findOrFail($taskId);
             $this->authorize('update', $task);
             $originalAssignee = $task->assigned_user_id;
-            $task->update($validated);
+            Task::withoutSyncingToSearch(function () use ($task, $validated) {
+                $task->update($validated);
+            });
             if (!empty($validated['assigned_user_id']) && $validated['assigned_user_id'] !== $originalAssignee) {
                 optional(\App\Models\User::find($validated['assigned_user_id']))?->notify(new TaskAssigned($task));
             }
@@ -105,7 +169,9 @@ class Kanban extends Component
             $validated['order'] = $lastOrder + 1;
             $validated['project_id'] = $this->project->id;
             $validated['created_by'] = Auth::id();
-            $task = Task::create($validated);
+            Task::withoutSyncingToSearch(function () use (&$task, $validated) {
+                $task = Task::create($validated);
+            });
             if (!empty($validated['assigned_user_id'])) {
                 optional(\App\Models\User::find($validated['assigned_user_id']))?->notify(new TaskAssigned($task));
             }
@@ -123,11 +189,21 @@ class Kanban extends Component
         $this->dispatch('$refresh');
     }
 
+    public function saveFromForm(): void
+    {
+        $this->saveTask(['taskId' => $this->taskId, 'data' => $this->form]);
+        $this->showTaskModal = false;
+    }
+
     public function deleteTask(int $taskId): void
     {
-    $task = Task::findOrFail($taskId);
-    $this->authorize('delete', $task);
-        $task->delete();
+        $task = Task::findOrFail($taskId);
+        $this->authorize('delete', $task);
+        // Remove from search before deleting to avoid indexing issues
+        try { $task->unsearchable(); } catch (\Throwable $e) {}
+        Task::withoutSyncingToSearch(function () use ($task) {
+            $task->delete();
+        });
         ActivityLog::create([
             'team_id' => $this->project->team_id,
             'user_id' => Auth::id(),
@@ -149,6 +225,6 @@ class Kanban extends Component
 
         $teamUsers = $this->project->team->users()->select('users.id','users.name','users.email')->get();
 
-        return view('projects.kanban', compact('logs','teamUsers'));
+    return view('projects.kanban_page', compact('logs','teamUsers'));
     }
 }

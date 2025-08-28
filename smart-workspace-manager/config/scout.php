@@ -16,7 +16,7 @@ return [
     |
     */
 
-    'driver' => env('SCOUT_DRIVER', 'algolia'),
+    'driver' => env('SCOUT_DRIVER', 'tntsearch'),
 
     /*
     |--------------------------------------------------------------------------
@@ -204,6 +204,30 @@ return [
             //     ],
             // ],
         ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | TNTSearch Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Here you may configure your TNTSearch settings. TNTSearch is a full-text
+    | search engine written in PHP. It supports boolean searches, facet 
+    | searches, fuzzy search, geo-location search, etc.
+    |
+    */
+
+    'tntsearch' => [
+        'storage'  => storage_path('framework/search'),
+        'fuzziness' => env('TNTSEARCH_FUZZINESS', false),
+        'fuzzy' => [
+            'prefix_length' => 2,
+            'max_expansions' => 50,
+            'distance' => 2
+        ],
+        'asYouType' => false,
+        'searchBoolean' => env('TNTSEARCH_BOOLEAN', false),
+        'maxDocs' => env('TNTSEARCH_MAX_DOCS', 500),
     ],
 
 ];

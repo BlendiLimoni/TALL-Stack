@@ -15,13 +15,16 @@
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         @forelse($projects as $project)
-            <a href="{{ route('projects.show', $project) }}" class="p-4 rounded-lg border bg-white dark:bg-gray-800 dark:border-gray-700 hover:shadow">
+            <a href="{{ route('projects.show', $project) }}" class="p-4 rounded-lg border bg-white dark:bg-gray-800 dark:border-gray-700 hover:shadow relative">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <span class="inline-block w-3 h-3 rounded-full" style="background-color: {{ $project->color ?? '#6366f1' }}"></span>
                         <h2 class="font-medium">{{ $project->name }}</h2>
                     </div>
-                    <button type="button" class="text-sm text-indigo-600" wire:click.prevent="$dispatch('edit-project', { id: {{ $project->id }} })">Edit</button>
+                    <button type="button" class="text-sm text-indigo-600"
+                            @click.stop.prevent="$dispatch('edit-project', { id: {{ $project->id }} })">
+                        Edit
+                    </button>
                 </div>
                 <p class="text-sm text-gray-500 mt-2 line-clamp-2">{{ $project->description }}</p>
                 <div class="mt-4 grid grid-cols-3 gap-2 text-xs">

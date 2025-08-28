@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Laravel\Jetstream\Events\TeamCreated;
 use Laravel\Jetstream\Events\TeamDeleted;
 use Laravel\Jetstream\Events\TeamUpdated;
@@ -21,6 +22,7 @@ class Team extends JetstreamTeam
     protected $fillable = [
         'name',
         'personal_team',
+        'user_id',
     ];
 
     /**
@@ -49,5 +51,13 @@ class Team extends JetstreamTeam
     public function isOwner(User $user): bool
     {
         return $this->user_id === $user->id;
+    }
+
+    /**
+     * Get the projects that belong to the team.
+     */
+    public function projects(): HasMany
+    {
+        return $this->hasMany(Project::class);
     }
 }

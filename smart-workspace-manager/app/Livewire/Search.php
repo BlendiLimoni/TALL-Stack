@@ -13,10 +13,16 @@ class Search extends Component
 
     public function updatedQuery()
     {
-        if (strlen($this->query) > 2) {
-            $projects = Project::search($this->query)->get();
-            $tasks = Task::search($this->query)->get();
-            $this->results = $projects->concat($tasks);
+        if (strlen((string) $this->query) > 2) {
+            try {
+                $projects = Project::search((string) $this->query)->get();
+                $tasks = Task::search((string) $this->query)->get();
+                $this->results = $projects->concat($tasks);
+            } catch (\Throwable $e) {
+                // If the search index is inconsistent or fields contain arrays, avoid crashing the UI
+                logger()->warning('Search failed', ['q' => $this->query, 'error' => $e->getMessage()]);
+                $this->results = [];
+            }
         } else {
             $this->results = [];
         }

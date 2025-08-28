@@ -34,4 +34,28 @@ class Project extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
+    /**
+     * Scout indexing payload as strings only (TNTSearch requirement).
+     */
+    public function toSearchableArray(): array
+    {
+        $data = [
+            'id' => (string) $this->id,
+            'name' => (string) ($this->name ?? ''),
+            'description' => (string) ($this->description ?? ''),
+            'team' => (string) optional($this->team)->name,
+            'creator' => (string) optional($this->creator)->name,
+        ];
+
+        return array_map(static function ($v) {
+            if (is_array($v)) {
+                return implode(' ', $v);
+            }
+            if (is_bool($v) || is_int($v) || is_float($v)) {
+                return (string) $v;
+            }
+            return (string) ($v ?? '');
+        }, $data);
+    }
 }

@@ -11,6 +11,13 @@ class CommandPalette extends Component
     public $results = [];
     public $isOpen = false;
 
+    public function mount()
+    {
+        $this->isOpen = false;
+        $this->query = '';
+        $this->results = [];
+    }
+
     public function updatedQuery()
     {
         if (strlen($this->query) > 0) {
