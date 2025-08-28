@@ -74,7 +74,9 @@
                             </div>
                             <div class="mt-2 flex gap-2">
                                 <button type="button" class="text-xs text-indigo-600" draggable="false" @mousedown.prevent.stop wire:click.stop="openTaskModal({{ $task->id }})">Edit</button>
-                                <button type="button" class="text-xs text-rose-600" draggable="false" @mousedown.prevent.stop wire:click.stop="deleteTask({{ $task->id }})">Delete</button>
+                                @can('delete', $task)
+                                    <button type="button" class="text-xs text-rose-600" draggable="false" @mousedown.prevent.stop wire:click.stop="deleteTask({{ $task->id }})">Delete</button>
+                                @endcan
                             </div>
                         </div>
                     @endforeach
