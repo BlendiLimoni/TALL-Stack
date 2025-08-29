@@ -1,7 +1,24 @@
-<div class="p-6 space-y-6" x-data>
+<div class="p-6 space-y-6" x-data="{ open:false }" x-on:close-project-modal.window="open=false" x-init="
+    // Listen to both Livewire and browser events
+    window.addEventListener('open-project-modal', () => { open=true });
+    window.addEventListener('close-project-modal', () => { open=false });
+    document.addEventListener('livewire:init', () => {
+        Livewire.on('open-project-modal', () => { open = true });
+        Livewire.on('close-project-modal', () => { open = false });
+        // Temporarily disable JS navigation - let Livewire handle it
+        Livewire.on('project-saved', (payload) => {
+            console.debug('[project-saved:livewire] letting Livewire handle navigation', payload);
+        });
+    });
+    // Temporarily disable browser event navigation - let Livewire handle it
+    window.addEventListener('project-saved', (e) => {
+        console.debug('[project-saved:event] letting Livewire handle navigation', e.detail);
+    });
+">
+    <style>[x-cloak]{display:none!important}</style>
     <div class="flex items-center justify-between">
         <h1 class="text-2xl font-semibold">Projects</h1>
-    <button class="btn btn-primary" wire:click="$dispatch('open-project-modal'); $dispatch('create-project')">
+    <button class="btn btn-primary" x-on:click="open=true; Livewire.dispatch('create-project')">
             + New Project
         </button>
     </div>
@@ -21,8 +38,8 @@
                         <span class="inline-block w-3 h-3 rounded-full" style="background-color: {{ $project->color ?? '#6366f1' }}"></span>
                         <h2 class="font-medium">{{ $project->name }}</h2>
                     </div>
-                    <button type="button" class="text-sm text-indigo-600"
-                            @click.stop.prevent="$dispatch('edit-project', { id: {{ $project->id }} })">
+            <button type="button" class="text-sm text-indigo-600"
+                x-on:click.stop.prevent="open=true; Livewire.dispatch('edit-project', { id: {{ $project->id }} })">
                         Edit
                     </button>
                 </div>
@@ -47,16 +64,11 @@
         @endforelse
     </div>
 
-    <template x-teleport="body">
-        <div x-data="{ open: false }" 
-             x-on:open-project-modal.window="open = true" 
-             x-on:close-project-modal.window="open = false">
-            <div x-show="open" class="fixed inset-0 z-50 grid place-items-center bg-black/40" x-transition>
-                <div class="bg-white dark:bg-gray-800 rounded-lg w-full max-w-lg p-6" @click.outside="open=false">
-                    @livewire('projects.project-form')
-                </div>
-            </div>
+    <div x-cloak x-show="open" class="fixed inset-0 z-50 grid place-items-center bg-black/40" x-transition
+         @close-project-modal.window="open = false">
+        <div class="bg-white dark:bg-gray-800 rounded-lg w-full max-w-lg p-6" @click.outside="open=false">
+            <livewire:projects.project-form :key="'project-form-'.now()->timestamp" />
         </div>
-    </template>
+    </div>
 
 </div>

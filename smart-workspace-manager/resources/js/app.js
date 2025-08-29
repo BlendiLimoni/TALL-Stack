@@ -1,5 +1,8 @@
 import './bootstrap';
 import Alpine from 'alpinejs';
 
-window.Alpine = Alpine;
-Alpine.start();
+// Only start Alpine if it's not already running
+if (!window.Alpine) {
+    window.Alpine = Alpine;
+    Alpine.start();
+}

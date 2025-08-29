@@ -90,4 +90,32 @@ class KanbanCrudTest extends TestCase
             'order' => 0,
         ]);
     }
+
+    public function test_member_can_create_task(): void
+    {
+        $this->seed(DemoSeeder::class);
+        $member = User::where('email', 'member@example.com')->firstOrFail();
+        $project = Project::firstOrFail();
+
+        $this->actingAs($member, 'web');
+
+        Livewire::test(ProjectKanban::class, ['project' => $project])
+            ->call('saveTask', [
+                'taskId' => null,
+                'data' => [
+                    'title' => 'Brand New Task',
+                    'description' => 'Created from test',
+                    'due_date' => null,
+                    'assigned_user_id' => null,
+                    'priority' => 'medium',
+                    'status' => 'todo',
+                ],
+            ]);
+
+        $this->assertDatabaseHas('tasks', [
+            'project_id' => $project->id,
+            'title' => 'Brand New Task',
+            'status' => 'todo',
+        ]);
+    }
 }

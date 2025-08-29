@@ -7,12 +7,24 @@ use App\Models\Team;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
 use Livewire\Component;
+use Illuminate\Support\Facades\Log;
 
 #[Layout('layouts.app')]
 class Index extends Component
 {
     public string $search = '';
+    public int $bump = 0;
+
+    #[On('refresh-projects')]
+    public function refreshProjects(): void
+    {
+        Log::info('Projects.Index refreshProjects called');
+        // Clear any active search so new items are visible, then trigger re-render
+        $this->search = '';
+        $this->bump++; // trigger re-render
+    }
 
     public function render()
     {
@@ -43,6 +55,12 @@ class Index extends Component
             ->when($this->search, fn($q) => $q->where('name', 'like', "%{$this->search}%")->orWhere('description','like', "%{$this->search}%"))
             ->latest()
             ->get();
+
+        Log::info('Projects.Index render', [
+            'team_id' => $team->id,
+            'search' => $this->search,
+            'count' => $projects->count(),
+        ]);
 
         return view('projects.index', [
             'projects' => $projects,

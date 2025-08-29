@@ -1,8 +1,7 @@
 <div>
     <!-- Command Palette Modal -->
-    <div x-data="{ 
-            isVisible: @entangle('isOpen')
-         }"
+    <div x-data="{ isVisible: false }"
+         x-init="document.addEventListener('livewire:init', () => { Livewire.on('command-palette:open', () => { isVisible = true }); Livewire.on('command-palette:close', () => { isVisible = false }); })"
          @keydown.window.cmd.k.prevent="$wire.openPalette()"
          @keydown.window.ctrl.k.prevent="$wire.openPalette()"
          @keydown.window.escape="$wire.closePalette()">

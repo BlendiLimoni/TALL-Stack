@@ -3,6 +3,7 @@
 namespace App\Policies;
 
 use App\Models\Task;
+use App\Models\Project;
 use App\Models\User;
 
 class TaskPolicy
@@ -12,11 +13,9 @@ class TaskPolicy
         return $task->project->team->hasUser($user);
     }
 
-    public function create(User $user, array $context): bool
+    public function create(User $user, Project $project): bool
     {
-        // context[0] = Task::class, context[1] = Project
-        $project = $context[1] ?? null;
-        return $project && $project->team->hasUser($user);
+        return $project->team->hasUser($user);
     }
 
     public function update(User $user, Task $task): bool

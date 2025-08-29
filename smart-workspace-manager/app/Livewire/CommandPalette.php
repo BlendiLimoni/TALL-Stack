@@ -29,12 +29,14 @@ class CommandPalette extends Component
 
     public function openPalette()
     {
-        $this->isOpen = true;
+    $this->isOpen = true;
+    $this->dispatch('command-palette:open');
     }
 
     public function closePalette()
     {
-        $this->isOpen = false;
+    $this->isOpen = false;
+    $this->dispatch('command-palette:close');
         $this->query = '';
         $this->results = [];
     }

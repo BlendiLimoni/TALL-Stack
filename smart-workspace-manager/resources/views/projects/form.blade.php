@@ -1,6 +1,6 @@
 <div>
     <h2 class="text-lg font-semibold mb-4">{{ $project ? 'Edit Project' : 'New Project' }}</h2>
-    <div class="space-y-4">
+    <form wire:submit.prevent="save" class="space-y-4" x-on:submit="console.debug('[form:submit] triggered')">
         <div>
             <x-label for="name" value="Name" />
             <x-input id="name" type="text" class="mt-1 block w-full" wire:model.defer="name" />
@@ -16,9 +16,9 @@
             <x-input id="color" type="text" class="mt-1 block w-40" placeholder="#6366f1" wire:model.defer="color" />
             <x-input-error for="color" class="mt-1" />
         </div>
-    </div>
-    <div class="mt-6 flex justify-end gap-3">
-        <x-secondary-button x-on:click="$dispatch('close-project-modal')">Cancel</x-secondary-button>
-        <x-button wire:click="save">Save</x-button>
-    </div>
+        <div class="mt-6 flex justify-end gap-3">
+            <x-secondary-button type="button" x-on:click="console.debug('[cancel:click]'); window.dispatchEvent(new CustomEvent('close-project-modal'))">Cancel</x-secondary-button>
+            <x-button type="submit" wire:loading.attr="disabled" wire:target="save" wire:click="save" x-on:click="console.debug('[save:click] button clicked')">Save</x-button>
+        </div>
+    </form>
 </div>
