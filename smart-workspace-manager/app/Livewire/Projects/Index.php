@@ -26,6 +26,57 @@ class Index extends Component
         $this->bump++; // trigger re-render
     }
 
+    #[On('delete-project')]
+    public function deleteProject(int $id): void
+    {
+        Log::info('Projects.Index deleteProject called', ['project_id' => $id]);
+        
+        $user = Auth::user();
+        $team = $user->currentTeam;
+        
+        if (!$team) {
+            $this->dispatch('toast', type: 'error', message: 'No team found');
+            return;
+        }
+
+        // Find the project and verify ownership
+        $project = Project::where('id', $id)->where('team_id', $team->id)->first();
+        
+        if (!$project) {
+            $this->dispatch('toast', type: 'error', message: 'Project not found or not authorized');
+            return;
+        }
+
+        // Check authorization using the policy
+        try {
+            $this->authorize('delete', $project);
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            $this->dispatch('toast', type: 'error', message: 'You do not have permission to delete this project. Only team owners and admins can delete projects.');
+            return;
+        }
+
+        $projectName = $project->name;
+
+        // Log deletion activity before deleting
+        \App\Models\ActivityLog::create([
+            'team_id' => $team->id,
+            'user_id' => Auth::id(),
+            'action' => 'project.deleted',
+            'subject_type' => Project::class,
+            'subject_id' => $project->id,
+            'meta' => ['name' => $projectName],
+        ]);
+
+        // Delete the project
+        $project->delete();
+        
+        Log::info('Project deleted from index', ['id' => $id, 'name' => $projectName]);
+
+        // Show success message and refresh the list
+        $this->dispatch('toast', type: 'success', message: "Project '{$projectName}' deleted successfully");
+        $this->refreshProjects();
+    }
+
     public function render()
     {
         $user = Auth::user();

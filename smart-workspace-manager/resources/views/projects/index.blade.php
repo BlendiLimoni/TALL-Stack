@@ -16,11 +16,25 @@
     });
 ">
     <style>[x-cloak]{display:none!important}</style>
+    
+    @livewire('pending-invitations', ['key' => 'pending-invitations-' . auth()->id()])
+    
     <div class="flex items-center justify-between">
         <h1 class="text-2xl font-semibold">Projects</h1>
-    <button class="btn btn-primary" x-on:click="open=true; Livewire.dispatch('create-project')">
-            + New Project
-        </button>
+        <div class="flex gap-3">
+            @if (Auth::user()->currentTeam)
+                <a href="{{ route('teams.show', Auth::user()->currentTeam) }}" 
+                   class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest transition ease-in-out duration-150">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    Team Settings
+                </a>
+            @endif
+            <button class="btn btn-primary" x-on:click="open=true; Livewire.dispatch('create-project')">
+                + New Project
+            </button>
+        </div>
     </div>
 
     <div class="flex items-center gap-3">
@@ -38,10 +52,18 @@
                         <span class="inline-block w-3 h-3 rounded-full" style="background-color: {{ $project->color ?? '#6366f1' }}"></span>
                         <h2 class="font-medium">{{ $project->name }}</h2>
                     </div>
-            <button type="button" class="text-sm text-indigo-600"
-                x-on:click.stop.prevent="open=true; Livewire.dispatch('edit-project', { id: {{ $project->id }} })">
-                        Edit
-                    </button>
+                    <div class="flex gap-2">
+                        <button type="button" class="text-sm text-indigo-600 hover:text-indigo-800"
+                            x-on:click.stop.prevent="open=true; Livewire.dispatch('edit-project', { id: {{ $project->id }} })">
+                            Edit
+                        </button>
+                        @can('delete', $project)
+                        <button type="button" class="text-sm text-red-600 hover:text-red-800"
+                            x-on:click.stop.prevent="if(confirm('Are you sure you want to delete \'{{ $project->name }}\'? This action cannot be undone.')) { Livewire.dispatch('delete-project', { id: {{ $project->id }} }) }">
+                            Delete
+                        </button>
+                        @endcan
+                    </div>
                 </div>
                 <p class="text-sm text-gray-500 mt-2 line-clamp-2">{{ $project->description }}</p>
                 <div class="mt-4 grid grid-cols-3 gap-2 text-xs">

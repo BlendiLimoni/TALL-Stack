@@ -223,7 +223,21 @@ class Kanban extends Component
             ->limit(10)
             ->get();
 
+        // Get all team users including the owner
         $teamUsers = $this->project->team->users()->select('users.id','users.name','users.email')->get();
+        
+        // Add the team owner if not already included
+        $owner = $this->project->team->owner;
+        if (!$teamUsers->contains('id', $owner->id)) {
+            $teamUsers->push((object)[
+                'id' => $owner->id,
+                'name' => $owner->name,
+                'email' => $owner->email
+            ]);
+        }
+        
+        // Sort by name for better UX
+        $teamUsers = $teamUsers->sortBy('name')->values();
 
     return view('projects.kanban_page', compact('logs','teamUsers'));
     }

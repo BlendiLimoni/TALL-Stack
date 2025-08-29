@@ -150,6 +150,58 @@ class ProjectForm extends Component
         return $this->redirect('/projects');
     }
 
+    public function delete()
+    {
+        if (!$this->project) {
+            $this->dispatch('toast', type: 'error', message: 'No project to delete');
+            return;
+        }
+
+        Log::info('ProjectForm.delete called', ['project_id' => $this->project->id, 'name' => $this->project->name]);
+        
+        // Check authorization using the policy
+        $user = Auth::user();
+        try {
+            $this->authorize('delete', $this->project);
+        } catch (AuthorizationException $e) {
+            $this->dispatch('toast', type: 'error', message: 'You do not have permission to delete this project. Only team owners and admins can delete projects.');
+            return;
+        }
+
+        $projectName = $this->project->name;
+        $projectId = $this->project->id;
+        $team = $this->project->team;
+
+        // Log deletion activity before deleting
+        ActivityLog::create([
+            'team_id' => $team->id,
+            'user_id' => Auth::id(),
+            'action' => 'project.deleted',
+            'subject_type' => Project::class,
+            'subject_id' => $projectId,
+            'meta' => ['name' => $projectName],
+        ]);
+
+        // Delete the project (this will cascade delete related records if configured)
+        $this->project->delete();
+        
+        Log::info('Project deleted', ['id' => $projectId, 'name' => $projectName]);
+
+        // Success feedback
+        $this->dispatch('toast', type: 'success', message: "Project '{$projectName}' deleted successfully");
+        session()->flash('toast', ['type' => 'success', 'message' => "Project '{$projectName}' deleted successfully"]);
+        
+        // Close modal and refresh
+        $this->dispatch('close-project-modal');
+        $this->dispatch('refresh-projects');
+        
+        // Reset form
+        $this->reset(['project', 'name', 'description', 'color']);
+        
+        // Redirect to projects list
+        return $this->redirect('/projects');
+    }
+
     private function normalizedColor(?string $value): ?string
     {
         $v = trim((string) $value);
