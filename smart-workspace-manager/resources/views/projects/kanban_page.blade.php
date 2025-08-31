@@ -72,6 +72,52 @@
                                     · Due {{ $task->due_date->format('M j') }}
                                 @endif
                             </div>
+                            
+                            <!-- File Attachments Preview -->
+                            @if($task->attachments->count() > 0)
+                                <div class="mt-2 p-2 bg-gray-50 dark:bg-gray-800 rounded text-xs">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <span class="font-medium flex items-center">
+                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                                            </svg>
+                                            {{ $task->attachments->count() }} file{{ $task->attachments->count() > 1 ? 's' : '' }}
+                                        </span>
+                                    </div>
+                                    <div class="space-y-1">
+                                        @foreach($task->attachments->take(3) as $attachment)
+                                            <div class="flex items-center justify-between">
+                                                <span class="truncate flex-1 mr-2">{{ $attachment->filename }}</span>
+                                                <div class="flex gap-1">
+                                                    <a href="{{ $attachment->url }}" 
+                                                       download="{{ $attachment->filename }}"
+                                                       class="text-blue-600 hover:text-blue-700 underline"
+                                                       draggable="false"
+                                                       @mousedown.prevent.stop
+                                                       @click.stop>
+                                                        Download
+                                                    </a>
+                                                    @if($attachment->is_image)
+                                                        <button type="button"
+                                                                @click.stop="window.open('{{ $attachment->url }}', '_blank')"
+                                                                class="text-green-600 hover:text-green-700 underline ml-1"
+                                                                draggable="false"
+                                                                @mousedown.prevent.stop>
+                                                            View
+                                                        </button>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                        @if($task->attachments->count() > 3)
+                                            <div class="text-gray-400 text-center">
+                                                +{{ $task->attachments->count() - 3 }} more file{{ $task->attachments->count() - 3 > 1 ? 's' : '' }}
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endif
+                            
                             <div class="mt-2 flex gap-2">
                                 <button type="button" class="text-xs text-indigo-600" draggable="false" @mousedown.prevent.stop wire:click.stop="openTaskModal({{ $task->id }})">Edit</button>
                                 @can('delete', $task)
@@ -98,10 +144,16 @@
     </div>
 
     @if($showTaskModal)
-        <div class="fixed inset-0 z-50 grid place-items-center bg-black/40">
-            <div class="bg-white dark:bg-gray-800 rounded-lg w-full max-w-xl p-6">
-                <h3 class="text-lg font-semibold mb-4">{{ $taskId ? 'Edit Task' : 'New Task' }}</h3>
-                <div class="grid grid-cols-2 gap-3">
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <!-- Modal Header -->
+                <div class="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 rounded-t-lg">
+                    <h3 class="text-lg font-semibold">{{ $taskId ? 'Edit Task' : 'New Task' }}</h3>
+                </div>
+                
+                <!-- Modal Content -->
+                <div class="px-6 py-4 space-y-4">
+                    <div class="grid grid-cols-2 gap-3">
                     <div class="col-span-2">
                         <label class="label">Title</label>
                         <input class="input w-full" wire:model.defer="form.title" />
@@ -109,7 +161,7 @@
                     </div>
                     <div class="col-span-2">
                         <label class="label">Description</label>
-                        <textarea class="input w-full" rows="4" wire:model.defer="form.description"></textarea>
+                        <textarea class="input w-full" rows="2" wire:model.defer="form.description"></textarea>
                         @error('form.description')<div class="text-xs text-rose-600 mt-1">{{ $message }}</div>@enderror
                     </div>
                     <div>
@@ -147,12 +199,50 @@
                         @error('form.assigned_user_id')<div class="text-xs text-rose-600 mt-1">{{ $message }}</div>@enderror
                     </div>
                 </div>
-                <div class="mt-6 flex justify-end gap-2">
-                    <x-secondary-button wire:click="closeTaskModal" wire:loading.attr="disabled">Cancel</x-secondary-button>
-                    <x-button wire:click="saveFromForm" wire:loading.attr="disabled">
-                        <span wire:loading.remove>Save</span>
-                        <span wire:loading>Saving...</span>
-                    </x-button>
+
+                @if($taskId)
+                    <!-- File Attachments Section (only for existing tasks) -->
+                    <div class="mt-6 border-t pt-6 bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                        <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                            </svg>
+                            File Attachments
+                        </h4>
+                        @php
+                            $task = App\Models\Task::find($taskId);
+                        @endphp
+                        @if($task)
+                            <livewire:file-upload :model="$task" :key="'task-files-'.$taskId" />
+                        @else
+                            <p class="text-sm text-gray-500">Task not found.</p>
+                        @endif
+                    </div>
+                @else
+                    <!-- Info for new tasks -->
+                    <div class="mt-6 border-t pt-6 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4">
+                        <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-2 flex items-center">
+                            <svg class="w-4 h-4 mr-2 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 15.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                            </svg>
+                            File Attachments
+                        </h4>
+                        <p class="text-sm text-yellow-700 dark:text-yellow-400">
+                            <strong>Save the task first</strong> to enable file attachments.
+                        </p>
+                    </div>
+                @endif
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="sticky bottom-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-6 py-4 rounded-b-lg">
+                    <div class="flex justify-end gap-2">
+                        <x-secondary-button wire:click="closeTaskModal" wire:loading.attr="disabled">Cancel</x-secondary-button>
+                        <x-button wire:click="saveFromForm" wire:loading.attr="disabled">
+                            <span wire:loading.remove>Save</span>
+                            <span wire:loading>Saving...</span>
+                        </x-button>
+                    </div>
                 </div>
             </div>
         </div>

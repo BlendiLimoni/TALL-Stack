@@ -39,7 +39,7 @@ class Kanban extends Component
     public function getTasksProperty()
     {
         return $this->project->tasks()
-            ->with('assignee')
+            ->with(['assignee', 'attachments'])
             ->when($this->filter, fn($q) => $q->where('title', 'like', "%{$this->filter}%"))
             ->when($this->priority, fn($q) => $q->where('priority', $this->priority))
             ->get()

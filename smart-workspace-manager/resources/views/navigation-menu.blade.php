@@ -80,6 +80,11 @@
                 @endif
 
                 @livewire('notifications.show-notifications')
+                
+                <!-- Live Activity -->
+                <div class="ms-3">
+                    @livewire('live-activity')
+                </div>
 
                 <!-- Settings Dropdown -->
                 <div class="ms-3 relative">

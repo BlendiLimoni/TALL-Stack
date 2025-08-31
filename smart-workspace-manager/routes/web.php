@@ -2,6 +2,7 @@
 
 use App\Livewire\Projects\Index as ProjectsIndex;
 use App\Livewire\Projects\Kanban as ProjectKanban;
+use App\Models\Attachment;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\Team;
@@ -25,6 +26,16 @@ Route::middleware([
     Route::get('/projects', ProjectsIndex::class)->name('projects.index');
     Route::get('/projects/{project}', ProjectKanban::class)->where('project', '[0-9]+')->name('projects.show');
     Route::get('/reports', \App\Livewire\Reports\TeamReports::class)->name('reports.index');
+    
+    // File download route
+    Route::get('/attachments/{attachment}/download', function (Attachment $attachment) {
+        // Security check: ensure user has access to the attachment
+        if (!Auth::user()->currentTeam || !Auth::user()->currentTeam->hasUser(Auth::user())) {
+            abort(403);
+        }
+        
+        return $attachment->downloadResponse();
+    })->name('attachments.download');
 });
 
 // Quick demo login to showcase the app (disabled in production)
